@@ -30,7 +30,7 @@ $$ pdf(x) = {1 \over σ\sqrt{2π}}e^{(x — μ)^2 \over 2σ^2} $$
 
 ### Markov Chain
 
-The next sample is only reliant on the previous one
+The next sample is only reliant on the previous one. 
 
 ## Step by step
 
@@ -68,6 +68,8 @@ we can easily sample a random step because gaussian noice is additive.
 
 ### Clip embedding
 
+[CLIP](https://github.com/openai/CLIP)
+
 - generating prompt image pair embeddings (transforming from text to numbers a computer can understand)
 
 
@@ -85,6 +87,8 @@ we can easily sample a random step because gaussian noice is additive.
 ## Existing Models
 
 ### Dall-E 2
+
+Transformer based image generation
 
 ### Imagen
 
