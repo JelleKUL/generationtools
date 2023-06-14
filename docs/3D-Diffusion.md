@@ -1,19 +1,21 @@
-# Different types of object generation
+# 3D generative model generation
 
-## Fixed sized representation of 3d models
+## Concepts
 
-### Voxel Grids
+### Fixed sized representation of 3d models
 
-### INR
+#### Voxel Grids
+
+#### INR
 
 Neural implicit representations
 create a neural network to represent every position in the data (pixel coordinate of sound timestamp) to the correct value
 
-#### Nerfs
+### Nerfs
 
-3d representations based on rgb images from an arbitrary vieuwpoint
+3d representations based on rgb images from an arbitrary viewpoint
 
-#### Texture Fields
+### Texture Fields
 
 https://github.com/autonomousvision/texture_fields
 
@@ -28,3 +30,11 @@ reducing the object representation size by reducing the amount of dimentsions ne
 this reduced representation also makes it easier to interpolate between different objects
 
 Generally created with an auto encoder.
+
+## Existing models
+
+### (stable) Dream Fusion
+
+### Magic 3D
+
+### Shap-E
