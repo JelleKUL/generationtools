@@ -25,38 +25,24 @@ Variational Autoencoder: [Reducing the Dimensionality of Data with Neural Networ
 
 Autoencoder is a neural network designed to learn an identity function in an unsupervised way to reconstruct the original input while compressing the data in the process so as to discover a more efficient and compressed representation. It consists of an Encoder network, which converts the data to a lower dimentional *latent space* and a Decoder network, which converts the *latent space* back into the original dimensions.
 
-<<<<<<< HEAD
-- Uses 2 networks: Encoder and Decoder
-- Provides fast and a wide variety of results
-- Can be blurry due to the potential overlap in the latent space of different compressed images.
-=======
 - VAEs store latent attributes as probability distributions
 - 2 networks: encoder, decoder
 - trained with: minimising L2 loss
   - The loss of the autoencoder is to minimize both the reconstruction loss (how similar the autoencoder’s output to its input) and its latent loss (how close its hidden nodes were to a normal distribution).
->>>>>>> a9bddbee114391038075ad176d5efd74c1ddb707
 
 ## Flow-based 
 
 Flow-based Generative Models
 
-<<<<<<< HEAD
-A flow-based generative model is a generative model used in machine learning that explicitly models a probability distribution by leveraging normalizing flow,[1][2] which is a statistical method using the change-of-variable law of probabilities to transform a simple distribution into a complex one.
-=======
 a stack of invertable transormations is applied. a flow model f is constructed as an invertible transformation that maps the high-dimensional random variable x to a standard Gaussian latent variable z=f(x), as in nonlinear independent component analysis
->>>>>>> a9bddbee114391038075ad176d5efd74c1ddb707
 
 ## Transformers
 
 mimic the human brain with neural pathways
 
-<<<<<<< HEAD
 transforms one input to another
 
 ## [Diffusion](./Image-Diffusion.md.md)
-=======
-## [Diffusion](./Image-Diffusion.md)
->>>>>>> a9bddbee114391038075ad176d5efd74c1ddb707
 
 Diffusion based network
 
