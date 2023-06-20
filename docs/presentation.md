@@ -3,7 +3,7 @@ marp: true
 class: invert
 paginate : true
 headingDivider: 4
-footer: - jelle vermandere - 
+footer: jelle vermandere - KU Leuven
 ---
 
 # Generative AI

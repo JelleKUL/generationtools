@@ -1,30 +1,17 @@
----
-marp: false
-class: invert
-paginate : true
-headingDivider: 4
-footer: - jelle vermandere - 
----
-
-
-
 # Image Diffusion
 
 Diffusion is one of [a number of generative neural networks](./Generative-models.md) to create new content out of existing training data.
 
 Diffusion models are inspired by non-equilibrium thermodynamics ([Deep Unsupervised Learning using Nonequilibrium Thermodynamics]). They define a Markov chain of diffusion steps to slowly add random noise to data and then learn to reverse the diffusion process to construct desired data samples from the noise. ([What are Diffusion Models?]) 
 
-So basically adding a bunch of random noise steps to an image and learning to reverse that 
+So basically adding a bunch of random noise steps to an image and learning to reverse that process.
 
-To speed up the process, the noise is applied to a compressed low dimensional latent representation
 
 ## Concepts
 
 ### Gaussian Noise
 
-a normalised noise field 
-
-defined by  by 2 parameters: a mean $μ$ and a variance $σ² ≥ 0$ with probability density function: 
+A normalised noise field defined by  by 2 parameters: a mean $μ$ and a variance $σ² ≥ 0$ with probability density function: 
 
 $$ pdf(x) = {1 \over σ\sqrt{2π}}e^{(x — μ)^2 \over 2σ^2} $$
 
@@ -32,8 +19,8 @@ $$ pdf(x) = {1 \over σ\sqrt{2π}}e^{(x — μ)^2 \over 2σ^2} $$
 
 The next sample is only reliant on the previous one. 
 
-## Step by step
 
+## Step by step
 
 - Forward diffusion step
   - gaussian noise function $q$ in a markov chain of steps
@@ -78,19 +65,25 @@ we can easily sample a random step because gaussian noice is additive.
 - also add the not conditioned image to the output and compare the differences between the 2 noisy images. 
 - Amplify the difference to better hone in on the prompt
 
-### Upscalers vs Latent
+### Upscalers
 
 - to save on processing time, images are generated at a very small resolutiona and another network is trained to upscale the image
--auto encoder:  or you can convert the noise image to latent space which is much more detailed with less data
+
+### Auto-encoders
+
+You can convert the noise image to latent space which is a lower dimentional representation 
 
 
 ## Existing Models
 
 ### Dall-E 2
 
-Transformer based image generation
+Open ai based transformer, source code not available, but accasible through an API
 
 ### Imagen
+[Photorealistic Text-to-Image Diffusion Models with Deep Language Understanding](https://doi.org/10.48550/arXiv.2205.11487)
+
+google designed diffuser, not publically available
 
 ### Stable Diffusion
 
@@ -100,7 +93,7 @@ The diffusion model is trained in latent space (much more efficient) instead of 
 
 ### Midjourney 
 
-
+Private company, accessible 
 
 
 ## Sources

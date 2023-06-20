@@ -42,6 +42,8 @@ Generally created with an auto encoder.
 
 https://github.com/ashawkey/stable-dreamfusion
 
+Uses stable diffusion and zero 1 to 3 to reconstruct 3d models
+
 ### Magic 3D
 
 https://research.nvidia.com/labs/dir/magic3d/
