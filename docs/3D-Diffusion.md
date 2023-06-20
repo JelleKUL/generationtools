@@ -38,6 +38,10 @@ Generally created with an auto encoder.
 
 ## Existing Models
 
+### Dreamfusion
+
+[DreamFusion: Text-to-3D using 2D Diffusion](http://arxiv.org/abs/2209.14988)
+
 ### Stable Dreamfusion
 
 https://github.com/ashawkey/stable-dreamfusion
