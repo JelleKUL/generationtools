@@ -17,18 +17,26 @@ $$ pdf(x) = {1 \over σ\sqrt{2π}}e^{(x — μ)^2 \over 2σ^2} $$
 
 ### Markov Chain
 
-The next sample is only reliant on the previous one. 
+A series of operations where the next step is only defined by the last one. This means every step can be recreated by the preceding step.
 
+## Step by step process
 
-## Step by step
+- Forward Diffusion Step
+  - Adding Gaussian noise to an existing image
+- Reverse Diffusion Step
+  - Start with
+  - let the network predict the final image
+  - add -1 steps of gaussian noise back to the predicted image
+  - repeat until the final image is reached
 
-- Forward diffusion step
-  - gaussian noise function $q$ in a markov chain of steps
-- reverse diffusion step
+### Forward Diffusion Step
+
+The trainingdata is created by itteratvely adding gaussian noise $q$ to the original image, in theory, should this step be repeated an infinite amount of times, the resulting images will only consist of pure gaussian noise.
+
 
 ### Adding noise to the image
 
-Basically, each new (slightly noisier) image at time step $t$ is drawn from a conditional Gaussian distribution with:
+Each new (slightly noisier) image at time step $t$ is drawn from a conditional Gaussian distribution with:
 
 $$ 
 μ_t = \sqrt{1-β_t}*x_{t-1}
@@ -78,6 +86,8 @@ You can convert the noise image to latent space which is a lower dimentional rep
 
 ### Dall-E 2
 
+[Hierarchical Text-Conditional Image Generation with CLIP Latents]
+
 Open ai based transformer, source code not available, but accasible through an API
 
 ### Imagen
@@ -107,3 +117,4 @@ Private company, accessible
 https://colab.research.google.com/drive/1roZqqhsdpCXZr8kgV_Bx_ABVBPgea3lX?usp=sharing
 
 
+[Hierarchical Text-Conditional Image Generation with CLIP Latents]: (https://doi.org/10.48550/arXiv.2204.06125)
