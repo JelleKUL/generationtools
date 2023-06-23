@@ -50,10 +50,16 @@ a stack of invertable transormations is applied. a flow model f is constructed a
 
 [Attention Is All You Need]
 
-mimic the human brain with neural pathways
+Generative pre-trained transformer
+
+mimic the human brain with neural pathways.
+it can predict a reasonable continuation of the prompt, one word at a time
 
 - positional encoding: every word has a identifier that the model can train on
+- matrix embedding: using the wordness weights to encode the human words into a weighted input matrix
 - self attention: learn a meaning of a word based on the context in which it is used
+- normalisation: standardize the matrix
+- feed forward to the next layer
 
 transforms one input to another, useful for tranforming text to numerical measurable information
 
