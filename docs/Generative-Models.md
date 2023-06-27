@@ -63,11 +63,15 @@ it can predict a reasonable continuation of the prompt, one word at a time
 
 transforms one input to another, useful for tranforming text to numerical measurable information
 
+## Style transfer
+
+[Neural Style Transfer: A Review]
+
+CNN based Style transfer is a computer vision technique that takes two images—a content image and a style reference image—and blends them together so that the resulting output image retains the core elements of the content image, but appears to be “painted” in the style of the style reference image.
+
 ## Diffusion
 
 [Deep Unsupervised Learning using Nonequilibrium Thermodynamics]
-
-Diffusion based network
 
 - 1 networks: reverse diffuser
 - trained with: minimising L2 loss
@@ -91,3 +95,6 @@ https://doi.org/10.1126/science.1127647
 
 [Deep Unsupervised Learning using Nonequilibrium Thermodynamics]:
 (https://doi.org/10.48550/arXiv.1503.03585)
+
+[Neural Style Transfer: A Review]: 
+(https://doi.org/10.1109/TVCG.2019.2921336)
