@@ -11,7 +11,7 @@ So basically adding a bunch of random noise steps to an image and learning to re
 
 ### Gaussian Noise
 
-A normalised noise field defined by  by 2 parameters: a mean $μ$ and a variance $σ² ≥ 0$ with probability density function: 
+A normalized noise field defined by  by 2 parameters: a mean $μ$ and a variance $σ² ≥ 0$ with probability density function: 
 
 $$ pdf(x) = {1 \over σ\sqrt{2π}}e^{(x — μ)^2 \over 2σ^2} $$
 
@@ -24,14 +24,14 @@ A series of operations where the next step is only defined by the last one. This
 - Forward Diffusion Step
   - Adding Gaussian noise to an existing image
 - Reverse Diffusion Step
-  - Start with
+  - Start with pure gaussian noise
   - let the network predict the final image
   - add -1 steps of gaussian noise back to the predicted image
   - repeat until the final image is reached
 
 ### Forward Diffusion Step
 
-The trainingdata is created by itteratvely adding gaussian noise $q$ to the original image, in theory, should this step be repeated an infinite amount of times, the resulting images will only consist of pure gaussian noise.
+The training data is created by iteratively adding gaussian noise $q$ to the original image, in theory, should this step be repeated an infinite amount of times, the resulting images will only consist of pure gaussian noise. In practice, around 1000 steps are needed to get sufficiently random noise as a starting point.
 
 
 ### Adding noise to the image
@@ -47,21 +47,21 @@ $$
 $$ x_t = \sqrt{1-β_t}*x_{t-1} + \sqrt{β_t} * ϵ $$
 
 where $ϵ$ is a integer between 0 and the number of steps ([The Annotated Diffusion Model]).
-we can easily sample a random step because gaussian noice is additive. 
+we can easily sample a random step because gaussian noise is additive. 
 
 
 ### Generating Random Images
 
 - we train a network to predict the noise added to an image
 - Then perform an inverse step to remove the noise from that image
-- We itteratively add a bit of random gaussian noise to an image, because it is gaussian it can be easily combined, so we can easily get the n'th image directly instead of generating all the ones before as well.
-- The generation is performed by starting with a random noise image, letting the network predict the final image and then adding a little bit less noise back to that image (one step less). This process is repeated intil we arrive at the final step.
+- We iteratively add a bit of random gaussian noise to an image, because it is gaussian it can be easily combined, so we can easily get the n'th image directly instead of generating all the ones before as well.
+- The generation is performed by starting with a random noise image, letting the network predict the final image and then adding a little bit less noise back to that image (one step less). This process is repeated until we arrive at the final step.
 
 ### Conditioned Image generation
 
 - We embed the prompt, transformer style, by tokenizing it and adding it to the loss function
 
-### Clip embedding
+#### Clip embedding
 
 [CLIP](https://github.com/openai/CLIP)
 
@@ -75,11 +75,12 @@ we can easily sample a random step because gaussian noice is additive.
 
 ### Upscalers
 
-- to save on processing time, images are generated at a very small resolutiona and another network is trained to upscale the image
+- to save on processing time, images are generated at a very small resolutions and another network is trained to upscale the image
 
 ### Auto-encoders
 
-You can convert the noise image to latent space which is a lower dimentional representation 
+- You can convert the noise image to latent space which is a lower dimensional representation 
+- This is similar to the VAE's but the diffusion is taking place at the latent space step.
 
 
 ## Existing Models
@@ -88,12 +89,13 @@ You can convert the noise image to latent space which is a lower dimentional rep
 
 [Hierarchical Text-Conditional Image Generation with CLIP Latents]
 
-Open ai based transformer, source code not available, but accasible through an API
+Open ai based transformer and GAN, source code not available, but accessible through an API
 
 ### Imagen
-[Photorealistic Text-to-Image Diffusion Models with Deep Language Understanding](https://doi.org/10.48550/arXiv.2205.11487)
 
-google designed diffuser, not publically available
+[Photorealistic Text-to-Image Diffusion Models with Deep Language Understanding]
+
+google designed diffuser, not publicly available
 
 ### Stable Diffusion
 
@@ -103,7 +105,8 @@ The diffusion model is trained in latent space (much more efficient) instead of 
 
 ### Midjourney 
 
-Private company, accessible 
+Uses a StyleGAN2 to generate images
+Private company, accessible through a discord server
 
 
 ## Sources
@@ -118,3 +121,4 @@ https://colab.research.google.com/drive/1roZqqhsdpCXZr8kgV_Bx_ABVBPgea3lX?usp=sh
 
 
 [Hierarchical Text-Conditional Image Generation with CLIP Latents]: (https://doi.org/10.48550/arXiv.2204.06125)
+[Photorealistic Text-to-Image Diffusion Models with Deep Language Understanding]: (https://doi.org/10.48550/arXiv.2205.11487)
