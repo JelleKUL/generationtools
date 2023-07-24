@@ -92,3 +92,6 @@ Denoising diffusion models (DDMs)
 > LION is set up as a variational
 autoencoder (VAE) with a hierarchical latent space that combines a global shape
 latent representation with a point-structured latent space.
+
+[GET3D: A Generative Model of High Quality 3D Textured Shapes Learned from Images](https://nv-tlabs.github.io/GET3D/)
+> GAN trained on images
