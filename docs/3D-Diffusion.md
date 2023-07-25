@@ -86,6 +86,8 @@ Use a VQ-VAE
 
 ### Existing Models
 
+[Comprehensive Review of Deep Learning-Based 3D Point Cloud Completion Processing and Analysis](https://arxiv.org/abs/2203.03311)
+
 [LION: Latent Point Diffusion Models for 3D Shape Generation](https://arxiv.org/abs/2210.06978)
 
 Denoising diffusion models (DDMs)
