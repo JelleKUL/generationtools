@@ -26,13 +26,15 @@ Use existing 3D geometry generators, since they all rely on either SDF's or poin
 - [Marching cubes]()
 - [Shape_as_points](https://github.com/autonomousvision/shape_as_points)
 - [NERF]()
+- [Vis2Mesh](https://github.com/gdaosu/vis2mesh)
 
 #### Texture generators to test
 - [Texture fields](https://github.com/autonomousvision/texture_fields) 2019 
     > Can predict a full texture based on a single 2d view
 - [Implicit Feature Networks for Texture Completion from Partial 3D Data](https://github.com/jchibane/if-net_texture)
     > IF-NET completing partial scans of humans, both geometry and texture (2020)
-- [Texturify: Generating Textures on 3D Shape Surfaces](https://github.com/nihalsid/stylegan2-ada-3d-texture) 2022
+- [Texturify: Generating Textures on 3D Shape Surfaces](https://nihalsid.github.io/texturify/) 2022
+    > Texturify learns to generate geometry-aware textures for untextured collections of 3D objects. Our method trains from only a collection of images and a collection of untextured shapes, which are both often available, without requiring any explicit 3D color supervision or shape-image correspondence. Textures are created directly on the surface of a given 3D shape, enabling generation of high-quality, compelling textured 3D shapes.
 - [TEXTure](https://github.com/TEXTurePaper/TEXTurePaper) 2023
     > TEXTure takes an input mesh and a conditioning text prompt and paints the mesh with high-quality textures, using an iterative diffusion-based process. In the paper we show that TEXTure can be used to not only generate new textures but also edit and refine existing textures using either a text prompt or user-provided scribbles.
 
@@ -46,6 +48,8 @@ Use existing 3D geometry generators, since they all rely on either SDF's or poin
 ### What?
 Converting a scanned environment into a collection of environment and object models that are filled in from all sides and occlusions
 
+[3D Semantic Scene Completion: A Survey](https://doi.org/10.1007/s11263-021-01504-5)
+
 ### Where?
 1) ICCV 24 Milan (07/03/24)
 2) SIGGRAPH ASIA 24 Tokyo (01/05/24)
@@ -53,7 +57,11 @@ Converting a scanned environment into a collection of environment and object mod
 ### How?
 Combine the object completion with the segmentation model and room cleanup model to create a full room with moveable furniture
 
-#### Comparative studies
+#### Improving the reconstruction
+- [CIRCLE: Convolutional Implicit Reconstruction and Completion for Large-scale Indoor Scene](https://github.com/otakuxiang/circle)
+    > CIRCLE is a framework for large-scale scene completion and geometric refinement based on local implicit signed distance function.
+
+#### Existing Models
 [SPSG: Self-Supervised Photometric Scene Generation from RGB-D Scans](https://github.com/angeladai/spsg)
 > completes rgb-d scans by generating new camera views in obscured areas.
 > Uses per voxel color information and a TSDF
