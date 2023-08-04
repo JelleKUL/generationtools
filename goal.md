@@ -15,6 +15,13 @@ Completing 3D models of partial 3D scanned objects, both using existing geometry
 ### How?
 Use existing 3D geometry generators, since they all rely on either SDF's or points we will evaluate them separately and need to convert the meshes.
 
+#### Datasets
+- [3DObjTex.v1](https://cvi2.uni.lu/sharp2022/challenge1/)
+- [Matterport3d](https://niessner.github.io/Matterport/)
+- [ShapeNet](https://shapenet.org/)
+- [ScanNet](http://www.scan-net.org/)
+- [PartNet](https://partnet.cs.stanford.edu/)
+
 #### Geometry Models to test
 - [AutoSDF](https://github.com/yccyenchicheng/AutoSDF) 2022 (VQ-VAE & transformer)
 - [Point-Voxel Diffusion](https://github.com/alexzhou907/PVD) 2022 (3D-diffuser)
@@ -62,6 +69,13 @@ Combine the object completion with the segmentation model and room cleanup model
     > CIRCLE is a framework for large-scale scene completion and geometric refinement based on local implicit signed distance function.
 
 #### Existing Models
-[SPSG: Self-Supervised Photometric Scene Generation from RGB-D Scans](https://github.com/angeladai/spsg)
-> completes rgb-d scans by generating new camera views in obscured areas.
-> Uses per voxel color information and a TSDF
+
+- [SG-NN: Sparse Generative Neural Networks for Self-Supervised Scene Completion of RGB-D Scans](https://github.com/angeladai/sgnn) 2020
+
+- [SPSG: Self-Supervised Photometric Scene Generation from RGB-D Scans](https://github.com/angeladai/spsg) 2021
+    > completes rgb-d scans by generating new camera views in obscured areas.
+    > Uses per voxel color information and a TSDF
+
+- [RfD-Net: Point Scene Understanding by Semantic Instance Reconstruction](https://github.com/GAP-LAB-CUHK-SZ/RfDNet) 2021
+
+- [Point Scene Understanding via Disentangled Instance Mesh Reconstruction](https://github.com/ashawkey/dimr) 2022

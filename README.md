@@ -9,3 +9,12 @@ This work contains extensive background information about the field of generativ
 2. [What is Image Diffusion?](./docs/Image-Diffusion.md)
 3. [What Are NEural Radiance Fields (NERF)?](./docs/Neural-Radiance-Fields.md)
 4. [What is Diffusion Based 3D Model Generation?](./docs/3D-Diffusion.md)
+
+
+## Step-by-step
+
+1. Geometry Completion
+   1. generate a completed shape based on the partial input
+   2. refine the shape using the existing faces
+2. Texture Completion
+   1. map the existing textures to the 

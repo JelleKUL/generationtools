@@ -1,9 +1,5 @@
 # 3D generative model generation
 
-![image](./img/dreamfusionImage.png)
-
-Using 2d diffusion to generate multiple viewpoints of a 3D object and using Nerfs to render the full 3D object
-
 ## Concepts
 
 ### Fixed sized representation of 3d models
@@ -43,6 +39,10 @@ Generally created with an auto encoder.
 
 ## Image based 3D diffusion
 
+![image](./img/dreamfusionImage.png)
+
+Using 2d diffusion to generate multiple viewpoints of a 3D object and using Nerfs to render the full 3D object
+
 Because there are a limited number of 3D datasets with prompt embedding available, researchers were looking for other ways to generate 3D models. One of these ways is using the extremely large 2D image datasets as a starting point.
 
 Each model has slight variations but in general they work the same:
@@ -72,6 +72,8 @@ https://github.com/openai/shap-e
 
 
 ## SDF based 3D Generation
+
+The 3d datasets that exist consist of mostly furniture and objects. 
 
 [AutoSDF: Shape Priors for 3D Completion, Reconstruction and Generation](https://arxiv.org/abs/2203.09516)
 > model the distribution over 3D shapes as a nonsequential autoregressive distribution over a discretized,
