@@ -36,3 +36,4 @@ correspondence. Textures are created directly on the surface of a given 3D shape
 enabling generation of high-quality, compelling textured 3D shapes.
 
 [TUVF: Learning Generalizable Texture UV Radiance Fields](https://arxiv.org/abs/2305.03040)
+

@@ -12,9 +12,12 @@ low-dimensional, symbolic grid-like latent representation of
 The method uses a volumetric Truncated-Signed Distance Field (T-SDF)
 for representing a 3D shape and learns a Transformer based neural autoregressive model. 
 
-The current implementation relies on removing a part of the complete sdf in order to indicate which part needs to be replaced. 
+The current implementation relies on removing a part of the complete sdf in order to indicate which part needs to be replaced.
+The fill in process 
 
 #### Questions?
 - Can we turn an incomplete mesh into a good enough SDF so it can be completed
+  - yess, use mesh2sdf
 - Can we use a more complex boundary condition to indicate which parts need to be generated
 - Can we incorporate Texture into the learning process?
+  - we will try to use the implicit features in the network to also learn the colors

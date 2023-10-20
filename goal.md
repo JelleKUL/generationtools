@@ -21,6 +21,7 @@ Use existing 3D geometry generators, since they all rely on either SDF's or poin
 - [ShapeNet](https://shapenet.org/)
 - [ScanNet](http://www.scan-net.org/)
 - [PartNet](https://partnet.cs.stanford.edu/)
+- [Real World Textured Things (RWTT)](https://texturedmesh.isti.cnr.it/)
 
 #### Geometry Models to test
 - [AutoSDF](https://github.com/yccyenchicheng/AutoSDF) 2022 (VQ-VAE & transformer)
