@@ -7,13 +7,13 @@ Welcome to the GenerationTools documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: API:
 
    generationtools/generationtools
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Examples:
 
    examples/workflow
