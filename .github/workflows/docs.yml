@@ -6,12 +6,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v3
+        with :
+          cache: 'pip'
       - name: Install dependencies
         run: |
           pip install -r docs/docs_requirements.txt
       - name: Sphinx build
         run: |
-          sphinx-build docs/source _build
+          sphinx-apidoc -o ./docs/source/generationtools .\generationtools\ -e -t ./docs/source/_templates
+          sphinx-build -b html docs/source/ docs/_build
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

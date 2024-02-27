@@ -72,11 +72,13 @@ html_static_path = ['_static']
 #    'logo_only': True,
 #}
 
-#Build instructions:
+#Scratch Build instructions:
 # cd ./docs 
 # sphinx-quickstart 
-# sphinx-apidoc -o . ..\geomapi\
+# sphinx-apidoc -o . ..\generationtools\
 # ./make html
 
-# sphinx-apidoc -o ./docs/source/geomapi .\geomapi\ -e -t ./docs/source/_templates
+# Quickstart
+# pip install -r docs/docs_requirements.txt
+# sphinx-apidoc -o ./docs/source/generationtools .\generationtools\ -e -t ./docs/source/_templates
 # sphinx-build -b html docs/source/ docs/_build
