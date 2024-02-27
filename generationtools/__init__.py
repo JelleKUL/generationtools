@@ -44,7 +44,7 @@ def get_point_colors_open3d(mesh, points):
 
 # Trimesh
 
-def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64):
+def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True):
     """Creates a normalized signed distance function from a provided mesh, using a voxel grid
 
     Args:
@@ -59,7 +59,9 @@ def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64):
     vertices = mesh.vertices
     bbmin = vertices.min(0)
     bbmax = vertices.max(0)
-    center = (bbmin + bbmax) * 0.5
+    if(recenter):
+        center = (bbmin + bbmax) * 0.5
+    else : center = 0
     scale = 2.0 / (bbmax - bbmin).max()
     vertices = (vertices - center) * scale
 
