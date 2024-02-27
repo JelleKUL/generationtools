@@ -41,7 +41,7 @@ autosummary_generate = True  # Turn on sphinx.ext.autosummary
 napoleon_google_docstring = False
 napoleon_use_param = False
 napoleon_use_ivar = True
-autodoc_mock_imports = config["options"]["install_requires"].splitlines().append('PIL')
+autodoc_mock_imports = list(config["options"]["install_requires"].splitlines().append('PIL'))
 #print(autodoc_mock_imports)
 autodoc_default_options = {
     'members': True,
