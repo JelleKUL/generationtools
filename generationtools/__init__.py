@@ -12,12 +12,30 @@ from scipy.spatial import cKDTree as KDTree
 
 # Open3d
 
-def get_tri_pixel_value(tri, image):
+def get_tri_pixel_value(tri: np.array, image: np.array)-> np.array:
+    """Returns the pixel color value of the center of a uv triangle
+
+    Args:
+        tri (np.array()): 2x1 array of (x,y) uv coordinates
+        image (np.array()): nxn array of pixel values
+
+    Returns:
+        np.array(): the pixel value
+    """
     avPos = np.round(np.average(tri, axis=0))
     val = image[avPos[1].astype(int)][avPos[0].astype(int)]
     return val
 
-def get_point_colors_open3d(mesh, points):
+def get_point_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.array) -> np.array:
+    """Returns the color of all the points from a mesh
+
+    Args:
+        mesh (o3d.geometry.TriangleMesh): The source colored mesh
+        points (np.array): The uncolored points
+
+    Returns:
+        np.array: The point colors
+    """
     # Create a scene and add the triangle mesh
     lMesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
     scene = o3d.t.geometry.RaycastingScene()
