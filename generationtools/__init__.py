@@ -9,6 +9,14 @@ from PIL import Image
 import torch
 import numbers
 from scipy.spatial import cKDTree as KDTree
+import os
+
+# File control
+
+def make_dir_if_not_exist(path):
+    if(not os.path.exists(path)):
+        print("Folder does not exist, creating the folder: " + path)
+        os.mkdir(path)
 
 # Open3d
 
@@ -62,7 +70,7 @@ def get_point_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.array) ->
 
 # Trimesh
 
-def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True):
+def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True, scaledownFactor = 8):
     """Creates a normalized signed distance function from a provided mesh, using a voxel grid
 
     Args:
@@ -80,7 +88,7 @@ def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True
     if(recenter):
         center = (bbmin + bbmax) * 0.5
     else : center = 0
-    scale = 2.0 / (bbmax - bbmin).max()
+    scale = (2-scaledownFactor/resolution) / (bbmax - bbmin).max()
     vertices = (vertices - center) * scale
 
     # fix mesh
@@ -187,6 +195,39 @@ def as_mesh(scene_or_mesh):
             for m in scene_or_mesh.geometry.values()])
     else:
         mesh = scene_or_mesh
+    return mesh
+
+def normalize_mesh(mesh):
+    # Get the bounding box of the mesh
+    min_bound, max_bound = mesh.bounds
+
+    # Calculate the center of the bounding box
+    center = (max_bound + min_bound) / 2.0
+
+    # Calculate the scale factor to normalize the mesh to fit within [-1, 1]
+    max_extent = max(max_bound - center)
+    scale_factor = 1.0 / max_extent
+
+    # Translate and scale the vertices
+    mesh.vertices -= center
+    mesh.vertices *= scale_factor
+
+    return mesh
+
+
+def scale_mesh_to_unity_cube(mesh):
+    # Get the bounding box of the mesh
+    min_bound, max_bound = mesh.bounds
+
+    # Calculate the scaling factors for each axis
+    scale_factors = 1.0 / (max_bound - min_bound)
+
+    # Translate the mesh to the origin
+    mesh.vertices -= min_bound
+
+    # Scale the mesh
+    mesh.vertices *= scale_factors
+
     return mesh
 
 def create_grid_points_from_xyz_bounds(min_x, max_x, min_y, max_y ,min_z, max_z, res):
