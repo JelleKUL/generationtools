@@ -10,6 +10,7 @@ import torch
 import numbers
 from scipy.spatial import cKDTree as KDTree
 import os
+import scipy
 
 # File control
 
@@ -20,11 +21,34 @@ def make_dir_if_not_exist(path):
 
 # Open3d
 
+# Compute barycentric coordinates (u, v, w) for
+# point p with respect to triangle (a, b, c)
+def carthesian_to_barycentric( p,  a,  b,  c):
+
+    v0 = b - a
+    v1 = c - a
+    v2 = p - a
+    d00 = np.dot(v0, v0)
+    d01 = np.dot(v0, v1)
+    d11 = np.dot(v1, v1)
+    d20 = np.dot(v2, v0)
+    d21 = np.dot(v2, v1)
+    denom = d00 * d11 - d01 * d01
+    v = (d11 * d20 - d01 * d21) / denom
+    w = (d00 * d21 - d01 * d20) / denom
+    u = 1.0 - v - w
+    return u,v,w
+
+def barycentric_to_carthesian(a, b, c, u, v, w):
+    p = u*a + v*b + c*w
+    return p
+
+
 def get_tri_pixel_value(tri: np.array, image: np.array)-> np.array:
     """Returns the pixel color value of the center of a uv triangle
 
     Args:
-        tri (np.array()): 2x1 array of (x,y) uv coordinates
+        tri (np.array()): 2x3 array of (x,y) uv coordinates
         image (np.array()): nxn array of pixel values
 
     Returns:
@@ -34,7 +58,26 @@ def get_tri_pixel_value(tri: np.array, image: np.array)-> np.array:
     val = image[avPos[1].astype(int)][avPos[0].astype(int)]
     return val
 
-def get_point_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.array) -> np.array:
+def get_point_pixel_value(tri: np.array, tri3D:np.array, point: np.array, image: np.array)-> np.array:
+    """Returns the pixel color of the 3D point
+
+    Args:
+        tri (np.array()):  2x3 array of (x,y) uv coordinates of the triangle
+        tri3D (np.array()): 3x3 array of (x,y,z) 3D coordinates of the triangle
+        point (np.array()): 3x1 array of (x,y,z) 3D coordinates
+        image (np.array()): nxn array of pixel values
+
+    Returns:
+        np.array(): 2x1 array the pixel value
+    """
+
+    u,v,w = carthesian_to_barycentric(point, tri3D[0],  tri3D[1], tri3D[2])
+    p2d = barycentric_to_carthesian( tri[0], tri[1], tri[2], u,v,w)
+
+    val = image[p2d[1].astype(int)][p2d[0].astype(int)]
+    return val
+
+def get_point_pixel_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.array, getDistance = False) -> np.array:
     """Returns the color of all the points from a mesh
 
     Args:
@@ -50,7 +93,60 @@ def get_point_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.array) ->
     _ = scene.add_triangles(lMesh)  # we do not need the geometry ID for mesh
 
     mesh_texture = np.asarray(mesh.textures[0])
-    mesh_uvs = np.asarray(mesh.triangle_uvs) * np.array([mesh_texture.shape[1],mesh_texture.shape[0]])
+    mesh_textures = np.asarray(mesh.textures)
+    mesh_uvs = np.asarray(mesh.triangle_uvs) * np.array([mesh_texture.shape[1],mesh_texture.shape[0]]) # multiply by the size of the texture map
+    mesh_tris = np.asarray(mesh.triangles)
+    mesh_verts = np.asarray(mesh.vertices)
+
+    newColors = []
+    if(getDistance):
+        distances = []
+    query_points = o3d.core.Tensor(points, dtype=o3d.core.Dtype.Float32)
+    # We compute the closest points on the surface.
+    ans = scene.compute_closest_points(query_points)
+    print("Closest points computed")
+    for i in range(len(points)):
+        # We get the triangle index of the closest point
+        idx = ans['primitive_ids'][i].item()
+        # We get the 3D location of the closest surface point
+        surfacePoint = ans['points'][i].numpy()
+        if(getDistance):
+            distances.append(np.linalg.norm(points[i] - surfacePoint,axis=-1))
+        #print(surfacePoint)
+        # We get the 3D positions of the 3 points forming the triangle
+        currentTri = mesh_tris[idx]
+        a3d,b3d,c3d = mesh_verts[currentTri[0]], mesh_verts[currentTri[1]],mesh_verts[currentTri[2]]
+        auv, buv, cuv = mesh_uvs[3*idx], mesh_uvs[3*idx+1], mesh_uvs[3*idx+2]
+        u,v,w = carthesian_to_barycentric(surfacePoint, a3d,b3d,c3d)
+        projectedPoint = barycentric_to_carthesian(auv, buv, cuv, u,v,w)
+        #print("Sampled point: " + str(queryPoint) + ",with closest point: "+ str(surfacePoint)+" with triangle index: " + str(idx))
+        #print(a3d,b3d,c3d)
+        #print(surfacePoint)
+        #print(auv, buv, cuv)
+        #print(projectedPoint)
+        newColors.append(mesh_texture[projectedPoint[1].astype(int)][projectedPoint[0].astype(int)])
+    if(getDistance):
+        return newColors, distances
+    return newColors
+
+
+def get_point_triangle_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.array) -> np.array:
+    """Returns the color of all the points from a mesh
+
+    Args:
+        mesh (o3d.geometry.TriangleMesh): The source colored mesh
+        points (np.array): The uncolored points
+
+    Returns:
+        np.array: The point colors
+    """
+    # Create a scene and add the triangle mesh
+    lMesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+    scene = o3d.t.geometry.RaycastingScene()
+    _ = scene.add_triangles(lMesh)  # we do not need the geometry ID for mesh
+
+    mesh_texture = np.asarray(mesh.textures[0])
+    mesh_uvs = np.asarray(mesh.triangle_uvs) * np.array([mesh_texture.shape[1],mesh_texture.shape[0]]) # multiply by the size of the texture map
     mesh_tris = np.asarray(mesh.triangles)
     mesh_tris_values = []
     for i in range(len(mesh_tris)):
