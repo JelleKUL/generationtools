@@ -9,6 +9,8 @@ from PIL import Image
 import torch
 import numbers
 from scipy.spatial import cKDTree as KDTree
+from scipy.interpolate import interp1d, interpn
+from skimage.measure import marching_cubes
 import os
 import scipy
 
@@ -179,33 +181,33 @@ def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True
 
     # normalize mesh
     vertices = mesh.vertices
-    bbmin = vertices.min(0)
-    bbmax = vertices.max(0)
     if(recenter):
-        center = (bbmin + bbmax) * 0.5
+        center = mesh.centroid
     else : center = 0
-    scale = (2-scaledownFactor/resolution) / (bbmax - bbmin).max()
+    scale = (2-scaledownFactor/resolution) /  np.max(mesh.extents)
     vertices = (vertices - center) * scale
 
     # fix mesh
-    sdf, mesh = mesh2sdf.compute(
+    sdf, sdf_mesh = mesh2sdf.compute(
         vertices, mesh.faces, resolution, fix=(not mesh.is_watertight), level=2 / resolution, return_mesh=True)
     
-    mesh.vertices = mesh.vertices / scale + center
+    sdf_mesh.vertices = mesh.vertices / scale + center
+    mesh.vertices = vertices
     return sdf, mesh
 
 def get_point_colors_trimesh(mesh, points):
-    
-    # get the indexes of the closest triangle for each point triangles [n,1]
-    _,_,triangleIds = trimesh.proximity.closest_point(mesh, points)
+    # get the indexes [n] and coordinate [n,3] of the closest triangle and point for each sample point
+    closestPoints,_,triangleIds =  trimesh.proximity.closest_point(mesh, points)
     # get the 3 vertex indices of each triangle [n,3]
-    vertices = mesh.faces[triangleIds]
+    faces = mesh.faces[triangleIds]
     # get the uv coordinate of each vertex [n,3,2]
-    uvCoordinates = mesh.visual.uv[vertices]
-    # get the average coordinate of each uv triangle [n,2]
-    uvCenters = np.average(uvCoordinates, axis = 1)
+    uvCoordinates = mesh.visual.uv[faces]
+    # get the barycentric coordinate of the closest point
+    bary_coords = trimesh.triangles.points_to_barycentric(triangles=mesh.vertices[faces], points=closestPoints)
+    # Interpolate UV coordinates using barycentric weights
+    uv_points = np.einsum("ij,ijk->ik", bary_coords, uvCoordinates)
     # get uv color of each uv center [n,4]
-    pointColors = mesh.visual.material.to_color(uvCenters)
+    pointColors = mesh.visual.material.to_color(uv_points)
     return pointColors
 
 def mesh_to_voxelgrid_trimesh(mesh: Trimesh, resolution: int = 64, hollow =True):
@@ -232,6 +234,26 @@ def mesh_to_voxelgrid_trimesh(mesh: Trimesh, resolution: int = 64, hollow =True)
     
 
     return voxelMesh, colorGrid, voxelScale
+
+def sdf_to_mesh(sdf, spacing):
+    vertices, faces, normals, _ = marching_cubes(sdf, level=0.0, spacing=(spacing,spacing, spacing))
+    # Create a Trimesh object
+    new_mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+    return new_mesh
+
+
+def create_voxel_grid(size, center = True):
+    # Set the starting point of the grid
+    if(center):
+        start = -0.5
+    else:
+        start = 0
+
+    voxel_coordinates = np.linspace(start + 1/size/2, start + 1 - (1/size/2), size)  # n evenly spaced points in [0, 1]
+    x, y, z = np.meshgrid(voxel_coordinates, voxel_coordinates, voxel_coordinates, indexing='ij')
+    # Stack the coordinates into an (n x n x n x 3) array
+    voxel_grid = np.stack((x, y, z), axis=-1)
+    return voxel_grid
 
 def show_mask_annotations(anns):
     if len(anns) == 0:
@@ -398,3 +420,67 @@ def shoot_holes(vertices, n_holes, dropout, mask_faces=None, faces=None,
         to_crop.append(indices)
     to_crop = np.unique(np.concatenate(to_crop))
     return to_crop
+
+
+def interpolate_value_range(values,axis: int, idx_range, newRange):
+    
+    # Move the chosen axis to the front for easier interpolation
+    values = np.moveaxis(values, axis, 0)
+    
+    # define the slices
+    startIdx = idx_range[0]
+    endIdx = idx_range[1]
+    oldRange = endIdx-startIdx
+    slice = values[startIdx:endIdx,:,:]
+
+    # Original and new coordinates along the axis
+    original_m = np.linspace(0, 1, oldRange)  # Normalized original m-axis (0 to 1)
+    new_m_coords = np.linspace(0, 1, newRange)  # Normalized new m-axis (0 to 1)
+
+    # Interpolate along the x-axis for each n x n slice
+    interpolated_array = np.empty((newRange, *slice.shape[1:]))
+    for i in range( slice.shape[1]):
+        for j in range(slice.shape[2]):
+            if(slice[:, i, j].ndim > 1):
+                # The to-be interpolated value is an array of its own
+                interpolated_array[:, i, j] = interpolate_coordinates(slice[:, i, j], newRange)
+            else:    
+                # Interpolate along the m-axis for each (i, j) point
+                interp_func = interp1d(original_m, slice[:, i, j], kind='linear', bounds_error=False, fill_value="extrapolate")
+                interpolated_array[:, i, j] = interp_func(new_m_coords)
+    
+    # Restore the original axis order and insert the interpolated range
+    interpolated_array = np.moveaxis(interpolated_array, 0, axis)
+    values = np.moveaxis(values, 0, axis)  # Move back the axis to its original position
+    
+    # Split the original array into two parts: before and after the insertion point
+    before_insertion = np.take(values, range(startIdx), axis=axis)
+    after_insertion = np.take(values, range(endIdx, values.shape[axis]), axis=axis)
+
+    # Concatenate the arrays with the insertion
+    result_array = np.concatenate((before_insertion, interpolated_array, after_insertion), axis=axis)
+    return result_array
+
+# Function to interpolate 3D coordinates
+def interpolate_coordinates(coords, new_size):
+    """
+    Interpolates a list of 3D coordinates to increase its size.
+    
+    Args:
+        coords (np.ndarray): Array of shape (n, m), where n is the number of mD points.
+        new_size (int): Desired number of interpolated points.
+
+    Returns:
+        np.ndarray: Interpolated array of shape (new_size, m).
+    """
+    coords = np.array(coords)  # Ensure input is a NumPy array
+    n = len(coords)
+    original_indices = np.linspace(0, n - 1, n)
+    interpolated_indices = np.linspace(0, n - 1, new_size)
+    
+    # Interpolate x, y, z coordinates separately
+    interpolated_coords = np.zeros((new_size, coords.shape[1]))
+    for i in range(coords.shape[1]):  # Loop over x, y, z
+        interpolated_coords[:, i] = np.interp(interpolated_indices, original_indices, coords[:, i])
+    
+    return interpolated_coords
