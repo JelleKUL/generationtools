@@ -9,7 +9,7 @@ from PIL import Image
 import torch
 import numbers
 from scipy.spatial import cKDTree as KDTree
-from scipy.interpolate import interp1d, interpn
+from scipy.interpolate import interp1d, interpn, RegularGridInterpolator
 from skimage.measure import marching_cubes
 import os
 import scipy
@@ -168,7 +168,7 @@ def get_point_triangle_colors_open3d(mesh: o3d.geometry.TriangleMesh, points:np.
 
 # Trimesh
 
-def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True, scaledownFactor = 8):
+def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True, scaledownFactor = 1):
     """Creates a normalized signed distance function from a provided mesh, using a voxel grid
 
     Args:
@@ -184,7 +184,7 @@ def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True
     if(recenter):
         center = mesh.centroid
     else : center = 0
-    scale = (2-scaledownFactor/resolution) /  np.max(mesh.extents)
+    scale = 2 /  np.max(mesh.extents) * scaledownFactor
     vertices = (vertices - center) * scale
 
     # fix mesh
@@ -192,7 +192,7 @@ def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True
         vertices, mesh.faces, resolution, fix=(not mesh.is_watertight), level=2 / resolution, return_mesh=True)
     
     sdf_mesh.vertices = mesh.vertices / scale + center
-    mesh.vertices = vertices
+    mesh.vertices = vertices /2
     return sdf, mesh
 
 def get_point_colors_trimesh(mesh, points):
@@ -235,9 +235,11 @@ def mesh_to_voxelgrid_trimesh(mesh: Trimesh, resolution: int = 64, hollow =True)
 
     return voxelMesh, colorGrid, voxelScale
 
-def sdf_to_mesh(sdf, spacing):
+def sdf_to_mesh(sdf, spacing, center = True):
     vertices, faces, normals, _ = marching_cubes(sdf, level=0.0, spacing=(spacing,spacing, spacing))
     # Create a Trimesh object
+    if(center):
+        vertices = vertices - np.array([0.5,0.5,0.5])
     new_mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
     return new_mesh
 
@@ -423,7 +425,18 @@ def shoot_holes(vertices, n_holes, dropout, mask_faces=None, faces=None,
 
 
 def interpolate_value_range(values,axis: int, idx_range, newRange):
-    
+    """
+    Interpolates a range of slices along a specified axis in a 3D array.
+
+    Args:
+        valies (np.ndarray): Input 3D array.
+        idx_range (tuple): Start and end indices of the range to interpolate (inclusive start, exclusive end).
+        newRange (int): New size for the interpolated range along the specified axis.
+        axis (int): Axis along which to perform the interpolation (0, 1, or 2).
+
+    Returns:
+        np.ndarray: 3D array with the interpolated range inserted.
+    """
     # Move the chosen axis to the front for easier interpolation
     values = np.moveaxis(values, axis, 0)
     
@@ -484,3 +497,174 @@ def interpolate_coordinates(coords, new_size):
         interpolated_coords[:, i] = np.interp(interpolated_indices, original_indices, coords[:, i])
     
     return interpolated_coords
+
+def interpolate_vertex_colors(vertices, colors):
+    """
+    Interpolates the color values for the mesh vertices based on a normalized 3D color grid.
+
+    The input color grid is assumed to be a normalized cube with size 1 and a center at 0 
+    (i.e., the grid spans from -0.5 to 0.5 along each axis).
+
+    Args:
+        vertices (np.ndarray): Vertices of the mesh (Nx3 array).
+        colors (np.ndarray): 3D grid of RGB colors (shape: DxWxHx3) defined in a normalized cube.
+
+    Returns:
+        np.ndarray: Interpolated colors for each vertex (Nx3 array).
+    """
+    grid_shape = colors.shape[:3]
+    color_channels = colors.shape[3]
+
+    # Define normalized grid points in the range [-0.5, 0.5]
+    grid_coords = [
+        np.linspace(-0.5, 0.5, grid_shape[i]) for i in range(3)
+    ]
+
+    # Create interpolators for each color channel (R, G, B)
+    interpolators = [
+        RegularGridInterpolator(
+            grid_coords,
+            colors[..., i],
+            bounds_error=False,
+            fill_value=0
+        )
+        for i in range(color_channels)
+    ]
+
+    # Interpolate each channel at the vertex positions
+    interpolated_colors = np.column_stack([interp(vertices) for interp in interpolators])
+
+    return interpolated_colors
+
+def create_colored_mesh_from_sdf_and_colors(sdf, colors):
+    """
+    Creates a mesh from an SDF grid and assigns vertex colors based on the color grid.
+
+    Args:
+        sdf (np.ndarray): 3D numpy array of the signed distance field.
+        colors (np.ndarray): 3D numpy array of RGB colors with the same shape as sdf.
+
+    Returns:
+        trimesh.Trimesh: A Trimesh object with vertex colors.
+    """
+    # Ensure the dimensions of the SDF and color grid match
+    assert sdf.shape == colors.shape[:3], "SDF and color grid dimensions must match!"
+
+    # Use marching cubes to extract the mesh from the SDF
+    vertices, faces, _, _ = marching_cubes(sdf, level=0)
+
+    # Normalize the vertex positions to the grid index space
+    grid_shape = np.array(sdf.shape)
+    vertices /= (grid_shape - 1)
+
+    # Map vertices to the color grid space
+    vertices *= (np.array(colors.shape[:3]) - 1)
+    
+    # Interpolate colors from the grid to the vertices
+    vertex_colors = np.array([
+        colors[
+            int(round(v[0])),
+            int(round(v[1])),
+            int(round(v[2]))
+        ] for v in vertices
+    ], dtype=np.uint8)
+
+    # Create a Trimesh object
+    mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+    mesh.visual.vertex_colors = vertex_colors
+
+    return mesh
+
+def repeat_value_range(values, axis: int, repeatRange, nrOfRepeats):
+    """
+    Repeats a specified range of values along a given axis in a multi-dimensional array,
+    ensuring that the entire slice is repeated as a whole.
+
+    Parameters:
+    ----------
+    values : numpy.ndarray
+        The input multi-dimensional array from which the slice will be repeated.
+    
+    axis : int
+        The axis along which to repeat the values.
+    
+    repeatRange : tuple of int
+        A tuple (start, end) specifying the range of indices along the chosen axis that 
+        will be repeated. The slice from `values[repeatRange[0]:repeatRange[1]]` will be 
+        repeated as a whole.
+
+    nrOfRepeats : int
+        The number of times to repeat the selected range along the specified axis.
+
+    Returns:
+    -------
+    numpy.ndarray
+        A new array with the repeated values inserted along the specified axis.
+
+    Example:
+    --------
+    values = np.random.rand(5, 4, 3)
+    repeatRange = (1, 3)
+    nrOfRepeats = 2
+    axis = 0
+
+    result = repeat_value_range(values, axis, repeatRange, nrOfRepeats)
+    """
+    # Extract the slice along the specified axis
+    slices = [slice(None)] * values.ndim  # Create a list of slices for all axes
+    slices[axis] = slice(repeatRange[0], repeatRange[1])  # Define the slice for the axis
+    slice_to_repeat = values[tuple(slices)]  # Extract the slice
+
+    # Repeat the slice as a whole
+    repeated_slice = np.concatenate([slice_to_repeat] * nrOfRepeats, axis=axis)
+
+    # Split the original array into two parts: before and after the repeat range
+    before_insertion = np.take(values, indices=range(repeatRange[0]), axis=axis)
+    after_insertion = np.take(values, indices=range(repeatRange[1], values.shape[axis]), axis=axis)
+
+    # Concatenate the arrays along the specified axis
+    result_array = np.concatenate((before_insertion, repeated_slice, after_insertion), axis=axis)
+
+    return result_array
+
+# Create planes
+def create_transparent_plane(position, axis=0, size=1, color=[1, 0, 0, 0.5]):
+    """
+    Creates a transparent plane at a specific position and axis.
+
+    Args:
+        position (float): Position along the specified axis.
+        axis (str): Axis along which the plane lies (0,1,2).
+        size (float): Side length of the square plane.
+        color (list): RGBA color of the plane (last value is transparency).
+
+    Returns:
+        trimesh.Trimesh: Plane as a trimesh object.
+    """
+    # Define the base vertices for a plane in the z-axis
+    vertices = np.array([
+        [0.0, 0.0, 0],
+        [ 1, 0.0, 0.0],
+        [ 1,  1, 0.0],
+        [0.0,  1, 0.0],
+    ])
+    vertices  = (vertices - np.array([0.5,0.5,0.5])) * size
+
+    # Move the plane to the specified axis
+    if axis == 0:
+        vertices = vertices[:, [2, 1, 0]]  # Swap z and x
+        vertices[:, 0] += position  # Move along x-axis
+    elif axis == 1:
+        vertices = vertices[:, [0, 2, 1]]  # Swap z and y
+        vertices[:, 1] += position  # Move along y-axis
+    elif axis == 2:
+        vertices[:, 2] += position  # Move along z-axis
+    else:
+        raise ValueError("Invalid axis. Choose from 0, 1 or 2")
+
+    # Define faces (two triangles to form a square)
+    faces = np.array([[0, 1, 2], [0, 2, 3]])
+
+    # Create the plane with vertex colors
+    plane = trimesh.Trimesh(vertices=vertices, faces=faces, face_colors=color)
+    return plane
