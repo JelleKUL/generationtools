@@ -13,6 +13,7 @@ from scipy.interpolate import interp1d, interpn, RegularGridInterpolator
 from skimage.measure import marching_cubes
 import os
 import scipy
+import math
 
 # File control
 
@@ -195,9 +196,12 @@ def mesh_to_sdf_tensor(mesh: Trimesh, resolution:int = 64, recenter: bool = True
     mesh.vertices = vertices /2
     return sdf, mesh
 
-def get_point_colors_trimesh(mesh, points):
+def get_point_colors_trimesh(mesh, points, filter = None):
+    if(filter is not None):
+        filteredPoints = points[filter,:]
+    else: filteredPoints = points
     # get the indexes [n] and coordinate [n,3] of the closest triangle and point for each sample point
-    closestPoints,_,triangleIds =  trimesh.proximity.closest_point(mesh, points)
+    closestPoints,_,triangleIds =  trimesh.proximity.closest_point(mesh, filteredPoints)
     # get the 3 vertex indices of each triangle [n,3]
     faces = mesh.faces[triangleIds]
     # get the uv coordinate of each vertex [n,3,2]
@@ -208,6 +212,10 @@ def get_point_colors_trimesh(mesh, points):
     uv_points = np.einsum("ij,ijk->ik", bary_coords, uvCoordinates)
     # get uv color of each uv center [n,4]
     pointColors = mesh.visual.material.to_color(uv_points)
+    if(filter is not None):
+        allPointcolors = np.repeat([[0,0,0,0]], points.shape[0], 0)
+        allPointcolors[filter] = pointColors
+        return allPointcolors
     return pointColors
 
 def mesh_to_voxelgrid_trimesh(mesh: Trimesh, resolution: int = 64, hollow =True):
@@ -628,7 +636,7 @@ def repeat_value_range(values, axis: int, repeatRange, nrOfRepeats):
     return result_array
 
 # Create planes
-def create_transparent_plane(position, axis=0, size=1, color=[1, 0, 0, 0.5]):
+def create_transparent_plane(position, axis=0, size=1, color=[1, 0, 0, 0.5], backend = "trimesh"):
     """
     Creates a transparent plane at a specific position and axis.
 
@@ -665,6 +673,101 @@ def create_transparent_plane(position, axis=0, size=1, color=[1, 0, 0, 0.5]):
     # Define faces (two triangles to form a square)
     faces = np.array([[0, 1, 2], [0, 2, 3]])
 
+    if(backend == "trimesh"):
     # Create the plane with vertex colors
-    plane = trimesh.Trimesh(vertices=vertices, faces=faces, face_colors=color)
+        plane = trimesh.Trimesh(vertices=vertices, faces=faces, face_colors=color)
+    elif(backend == "o3d"):
+        # Create Open3D mesh
+        plane = o3d.geometry.TriangleMesh()
+        plane.vertices = o3d.utility.Vector3dVector(vertices)
+        plane.triangles = o3d.utility.Vector3iVector(faces)
+        plane.compute_vertex_normals()
+    else:
+        print("Mode should be 'trimesh' of 'o3d'")
+        return False
     return plane
+
+def create_flipbook_texture(sdf_distances, sdf_colors, grid_size, treshold = True):
+    N, H, W = sdf_distances.shape
+    dist = sdf_distances.copy()
+
+    if(treshold):
+        dist[sdf_distances<=0] = 255
+        dist[sdf_distances>0] = 0
+    else:
+        # Normalize distance values to fit into the alpha channel (0-255)
+        min_dist, max_dist = sdf_distances.min(), sdf_distances.max()
+        sdf_distances = 255 - (sdf_distances - min_dist) / (max_dist - min_dist)
+        sdf_distances = (sdf_distances * 255).astype(np.uint8)
+        sdf_distances[sdf_distances<200] = 0
+        sdf_distances = (sdf_distances - 200) / (255 - 200) * 255
+    
+    
+    # Ensure colors are in 0-255 range
+    sdf_colors = (sdf_colors).astype(np.uint8)[:,:,:,:3]
+    
+    # Create RGBA frames
+    rgba_frames = np.concatenate([sdf_colors, dist[..., None]], axis=-1)
+    
+    # Arrange frames into a grid
+    grid_rows, grid_cols = grid_size
+    assert grid_rows * grid_cols >= N, "Grid size must be large enough to fit all slices"
+    
+    flipbook_height = grid_rows * H
+    flipbook_width = grid_cols * W
+    flipbook_texture = np.zeros((flipbook_height, flipbook_width, 4), dtype=np.uint8)
+    
+    for idx in range(N):
+        row = idx // grid_cols
+        col = idx % grid_cols
+        y, x = row * H, col * W
+        flipbook_texture[y:y+H, x:x+W, :] = rgba_frames[idx]
+    
+    return flipbook_texture
+
+
+
+def get_closest_factors(input_value: int):
+    if input_value <= 0:
+        raise ValueError("Input must be greater than 0")
+    
+    test_num = int(math.sqrt(input_value))
+    while input_value % test_num != 0:
+        test_num -= 1
+    
+    return (test_num, input_value // test_num)
+
+def o3d_to_trimesh_pointcloud(o3d_pcd):
+    """
+    Convert an Open3D point cloud to a Trimesh PointCloud.
+    """
+    points = np.asarray(o3d_pcd.points)
+
+    # Handle colors if present
+    if o3d_pcd.has_colors():
+        colors = np.asarray(o3d_pcd.colors)
+        tm_pcd = trimesh.points.PointCloud(vertices=points, colors=colors)
+    else:
+        tm_pcd = trimesh.points.PointCloud(vertices=points)
+
+    return tm_pcd
+
+def trimesh_to_o3d_pointcloud(tm_pcd):
+    """
+    Convert a Trimesh PointCloud to an Open3D point cloud.
+    """
+    o3d_pcd = o3d.geometry.PointCloud()
+    points = np.asarray(tm_pcd.points)
+    o3d_pcd.points = o3d.utility.Vector3dVector(points)
+
+    # Handle colors if present
+    if hasattr(tm_pcd, 'colors') and tm_pcd.colors is not None:
+        colors = np.asarray(tm_pcd.colors)
+
+        # Normalize if necessary (Trimesh may use 0–255)
+        if colors.max() > 1.0:
+            colors = colors / 255.0
+
+        o3d_pcd.colors = o3d.utility.Vector3dVector(colors)
+
+    return o3d_pcd
